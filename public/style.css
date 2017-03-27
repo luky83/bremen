@@ -1,0 +1,46 @@
+@CHARSET "UTF-8";
+
+body
+{
+background-color:#ffffff;
+}
+
+.center{
+  text-align: center;
+}
+
+.right{
+  text-align: right;
+}
+
+.machine-name-div{
+  height: 45px;
+  padding: 4px 8px;
+}
+
+.panel-title {
+  font-size: 16px;
+}
+
+/* Notifiche */
+@media (min-width : 768px) {
+  .sm-text-center{
+    text-align: center;
+  }
+  .sm-relative{
+    position: relative;
+  }
+  .sm-absolute{
+    position: absolute;
+    bottom: 0;
+    right: 0;
+  }
+}
+@media (max-width : 767px) {
+  .xs-text-right{
+    text-align: right;
+  }
+  .xs-margin-top{
+    margin-top: 50px;
+  }
+}
