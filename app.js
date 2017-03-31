@@ -132,12 +132,21 @@ console.log(httpPort + ' is the magic port');
 net.createServer(function (socket) {
 	console.log('data connection started from ' + socket.remoteAddress);
 
+  socket.on('error', function (err) {
+    console.log("Caught server socket error: ")
+    console.log(err.stack)
+  });
+
 	socket.on('data', function (data) {
-		deviceManage(JSON.parse(data));
+    try {
+      dataObj = JSON.parse(data);
+      deviceManage(dataObj);
+    } catch (e) {
+      console.error(e);
+    }
 	});
 
 	socket.on('end', function () {
-		console.log('data connection ended');
 	});
 }).listen(dataPort);
 
@@ -327,8 +336,8 @@ var pushNotification = function(data, callback){
 }
 
 var sendMail = function(docs, data){
-  console.log(docs);
-  console.log(data);
+  //console.log(docs);
+  //console.log(data);
 }
 var sendSMS = function(docs, data){
 
