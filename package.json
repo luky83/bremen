@@ -1,5 +1,10 @@
 {
   "name": "bremen",
+  "description" : "monitor the status of multiple devices in a local network",
+  "repository" :
+  { "type" : "git"
+  , "url" : "ssh://lucamarkio.com/home/lucamark/bremen.git"
+  },
   "main": "app.js",
   "dependencies": {
     "body-parser": "^1.15.2",
@@ -7,6 +12,7 @@
     "ejs": "^1.0.0",
     "express": "^4.6.1",
     "express-ejs-layouts": "^1.1.0",
-    "mongodb": "^2.2.14"
+    "mongodb": "^2.2.14",
+    "sendmail": "^1.1.1"
   }
 }

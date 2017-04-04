@@ -2,10 +2,13 @@
 var express = require('express');
 var bodyParser = require('body-parser');
 var net = require('net');
+var dgram = require('dgram');
+var udp = dgram.createSocket('udp4');
 var mongodb = require('mongodb');
 var MongoClient = require('mongodb').MongoClient
 var assert = require('assert');
 var dateFormat = require('dateformat');
+var sendmail = require('sendmail')({silent: true});
 
 var app = express();
 // mongoDB
@@ -13,8 +16,10 @@ var mongoUrl = 'mongodb://localhost:27017/bremen';
 // httpPort is the port the web browser is listening on. You might open in your browser:
 // http://localhost:8080/
 var httpPort = 8080;
-// dataPort is the TCP port we listen on from the Photon. This value is encoded in the Photon code
-var dataPort = 8081;
+// tcpPort is the TCP port we listen on from the Photon. This value is encoded in the Photon code
+var tcpPort = 8081;
+// udpPort is the TCP port we listen on from the Photon. This value is encoded in the Photon code
+var udpPort = 8082;
 // This array holds the clients (actually http server response objects) to send data to over SSE
 var clients = [];
 // Use connect method to connect to the server
@@ -133,22 +138,39 @@ net.createServer(function (socket) {
 	console.log('data connection started from ' + socket.remoteAddress);
 
   socket.on('error', function (err) {
-    console.log("Caught server socket error: ")
+    console.log("Caught tcp server socket error: ")
     console.log(err.stack)
   });
 
-	socket.on('data', function (data) {
-    try {
-      dataObj = JSON.parse(data);
-      deviceManage(dataObj);
-    } catch (e) {
-      console.error(e);
-    }
+	socket.on('data', function (packet) {
+    dataManage(packet)
 	});
+}).listen(tcpPort);
 
-	socket.on('end', function () {
-	});
-}).listen(dataPort);
+udp.on('error', function (err) {
+  console.log("Caught udp server socket error: ")
+  console.log(err.stack)
+});
+
+udp.on('message', function (packet, rinfo) {
+  dataManage(packet);
+});
+
+udp.on('listening', function() {
+  var address = udp.address();
+  console.log('udp server listening');
+});
+
+udp.bind(udpPort);
+
+function dataManage(packet){
+  try {
+    dataObj = JSON.parse(packet);
+    deviceManage(dataObj);
+  } catch (e) {
+    console.error(e);
+  }
+}
 
 // update clients once every second
 setInterval(function() {
@@ -191,47 +213,47 @@ function removeClient(client) {
 }
 
 // Mongo DAO functions
-var update = function(data) {
+var update = function(packet) {
   var collection = db.collection('realtime');
-  collection.update({ _id : data._id }
+  collection.update({ _id : packet._id }
     , { $set: { lastModified: new Date() }}, function(err, result) {
     assert.equal(err, null);
     assert.equal(1, result.result.n);
   });
 }
 
-var upsert = function(data, callback) {
+var upsert = function(packet, callback) {
   var rt = db.collection('realtime');
-  rt.update({ _id : data._id }
-    , { $set: { status : data.status, lastModified: new Date() }},  {upsert: true}, function(err, result) {
+  rt.update({ _id : packet._id }
+    , { $set: { status : packet.status, lastModified: new Date() }},  {upsert: true}, function(err, result) {
     assert.equal(err, null);
     assert.equal(1, result.result.n);
   });
-	callback(data);
+	callback(packet);
 }
 
-var insertHistoric = function(data) {
+var insertHistoric = function(packet) {
   // Get the documents collection
   var collection = db.collection('history');
   // Insert some documents
-  collection.insert({ id : data._id, status : data.status, lastModified : new Date() }, function(err, result) {
+  collection.insert({ id : packet._id, status : packet.status, lastModified : new Date() }, function(err, result) {
     assert.equal(err, null);
     assert.equal(1, result.result.n);
     assert.equal(1, result.ops.length);
   });
 }
 
-var deviceManage = function(data) {
+var deviceManage = function(packet) {
 	var rt = db.collection('realtime');
-	rt.find({ _id : data._id, status : data.status }).toArray(function(err, docs) {
+	rt.find({ _id : packet._id, status : packet.status }).toArray(function(err, device) {
     assert.equal(err, null);
-		if (docs.length > 0){
+		if (device.length > 0){
 			// status not changed - update time only in realtime table
-			update(data);
+			update(packet);
 		} else {
 			// new device or status changed - update or insert device-status and update history
-			upsert(data, insertHistoric);
-      pushNotification(data);
+			upsert(packet, insertHistoric);
+      pushNotification(packet);
 		}
   });
 }
@@ -311,11 +333,9 @@ var alias = function(data, callback){
   });
 }
 
-var pushNotification = function(data, callback){
-  // email SMS notification to be implemented
-  var nt = db.collection('notifications');
+var pushNotification = function(packet, callback){
   var status = '';
-  switch (data.status) {
+  switch (packet.status) {
     case 0:
       status = 'START';
       break;
@@ -328,17 +348,50 @@ var pushNotification = function(data, callback){
     default:
   }
   var query = {};
-  query[data._id] = status;
-  nt.find(query).toArray(function(err, docs) {
-    sendMail(docs, data);
-    sendSMS(docs, data);
+  query[packet._id] = status;
+  var nt = db.collection('notifications');
+  nt.find(query).toArray(function(err, notifications) {
+    var rt = db.collection('realtime');
+    rt.find({_id : packet._id}).toArray(function(err, device) {
+      packet.alias = device[0].alias;
+      console.log('_id: ' + device[0]._id)
+      console.log('alias: ' + device[0].alias)
+      notifications.forEach(function(notification){
+        pushMail(notification, packet);
+        sendSMS(notification, packet);
+      });
+    });
   });
 }
 
-var sendMail = function(docs, data){
-  //console.log(docs);
-  //console.log(data);
-}
-var sendSMS = function(docs, data){
+var pushMail = function(notification, packet){
+  var status = '';
+  switch (packet.status) {
+    case 0:
+      status = 'START';
+      break;
+    case 1:
+      status = 'STOP';
+      break;
+    case 2:
+      status = 'OFF';
+      break;
+    default:
+  }
+  var time = dateFormat(new Date(), "dd/mm/yyyy HH:MM:ss");
+  var mailParm = {
+      from: 'monitor@bre-men.it',
+      subject: status + ' : ' + (packet.alias?packet.alias:packet._id) + ' - ' + time,
+      html: 'La macchina ' + (packet.alias?packet.alias:packet._id) + ' è passata allo stato ' + status + '\r\n' + 'al tempo ' + time
+  }
+  mailParm.to = notification.email;
 
+  sendmail(mailParm, function(err, reply) {
+      //console.log(err && err.stack);
+      //console.dir(reply);
+    });
+}
+
+var sendSMS = function(notification, packet){
+  // to be implemented
 }

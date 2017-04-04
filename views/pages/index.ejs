@@ -13,16 +13,16 @@
 	<main>
 		<div class="row">
 				<% devices.forEach(function(device) {%>
-				<div class='col-sm-6 col-md-4 col-lg-3'>
+				<div class='col-sm-6 col-md-3 col-lg-2'>
 					<div class="panel panel-default center" id='<%= device._id + "-panel"%>'=>
 						<div class="panel-body">
 							<div class="panel-body machine-name-div">
 								<h1 class="panel-title editable editable-click editable-empty editable-open machine-name" data-url="/edit-machine-name" data-type="text" data-pk="<%= device._id%>"><%= device.alias ? device.alias : device._id%></h1>
 							</div>
-							<img src="/img/default_dot.png" height="128" width="128" id='<%= device._id + "-img"%>'>
+							<img src="/img/default_dot.png" height="96" width="96" id='<%= device._id + "-img"%>'>
 						</div>
 						<div class="panel-heading">
-							<h2><span class="label label-default" id='<%= device._id + "-status"%>'></span></h2>
+							<h3><span class="label label-default" id='<%= device._id + "-status"%>'></span></h3>
 							<p id='<%= device._id + "-time"%>'></p>
 						</div>
 					</div>

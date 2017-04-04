@@ -7,7 +7,7 @@ const int INPUT_PIN = D0;
 const int DRAIN_PIN = D1;
 // IP address and port of the server. Note that the node server uses two ports - one for the web browser
 // and a raw TCP port for receiving data. This is the port number for the data port, not the web server port!
-IPAddress serverAddress(10,28,28,69);
+IPAddress serverAddress(192,168,1,151);
 int serverPort = 8081;
 
 // Finite state machine states

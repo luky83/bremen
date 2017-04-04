@@ -62,7 +62,7 @@ function handleData(data) {
 	time.innerHTML = data.lastModified;
 }
 
-$.fn.editable.defaults.mode = 'inline';
+//$.fn.editable.defaults.mode = 'inline';
 $(document).ready(function() {
     $('.machine-name').editable();
 		$('#username').editable();
