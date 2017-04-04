@@ -28,6 +28,22 @@ MongoClient.connect(mongoUrl, function(err, database) {
   assert.equal(null, err);
   console.log("Connected successfully to mongodb");
   db = database;
+  // update clients once every second
+  setInterval(function() {
+    var rt = db.collection('realtime');
+    rt.find({}).toArray(function(err, docs) {
+      assert.equal(err, null);
+      docs.forEach(function(data, index){
+        if (data.status != 2 && new Date() - data.lastModified > 30000){
+          console.log("Device id:" + data._id + " not seen in the last 30 seconds. Setting offline.");
+          data.status = 2;
+          upsert(data, insertHistoric);
+          pushNotification(data);
+        }
+        sendToClients(JSON.stringify(data));
+      });
+    });
+  }, 1000);
 });
 
 // serve static content under public folder
@@ -171,23 +187,6 @@ function dataManage(packet){
     console.error(e);
   }
 }
-
-// update clients once every second
-setInterval(function() {
-  var rt = db.collection('realtime');
-  rt.find({}).toArray(function(err, docs) {
-    assert.equal(err, null);
-		docs.forEach(function(data, index){
-			if (data.status != 2 && new Date() - data.lastModified > 30000){
-				console.log("Device id:" + data._id + " not seen in the last 30 seconds. Setting offline.");
-				data.status = 2;
-				upsert(data, insertHistoric);
-        pushNotification(data);
-			}
-			sendToClients(JSON.stringify(data));
-		});
-	});
-}, 1000);
 
 // Send data to all SSE web browser clients. data must be a string.
 function sendToClients(data) {
