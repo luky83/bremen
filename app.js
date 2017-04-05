@@ -158,7 +158,7 @@ net.createServer(function (socket) {
   });
 
 	socket.on('data', function (packet) {
-    console.log(dateFormat(new Date(), "dd/mm/yyyy HH:MM:ss") + ' - tcp://' + rinfo.address + ':' + rinfo.port + ' ' + packet._id + '-' + packet.status);
+    console.log(dateFormat(new Date(), "dd/mm/yyyy HH:MM:ss") + ' - tcp://' + rinfo.address + ':' + rinfo.port + ' ' + packet.toString());
     dataManage(packet)
 	});
 }).listen(tcpPort);
@@ -169,7 +169,7 @@ udp.on('error', function (err) {
 });
 
 udp.on('message', function (packet, rinfo) {
-  console.log(dateFormat(new Date(), "dd/mm/yyyy HH:MM:ss") + ' - udp://' + rinfo.address + ':' + rinfo.port + ' ' + packet._id + '-' + packet.status);
+  console.log(dateFormat(new Date(), "dd/mm/yyyy HH:MM:ss") + ' - udp://' + rinfo.address + ':' + rinfo.port + ' ' + packet.toString());
   dataManage(packet);
 });
 
