@@ -1,5 +1,7 @@
 #include "Particle.h"
 SYSTEM_MODE(SEMI_AUTOMATIC);
+// How often to check for connection
+const unsigned long CONN_PERIOD_MS = 10000;
 // How often to send samples in milliseconds
 const unsigned long SEND_PERIOD_MS = 5000;
 
@@ -15,6 +17,7 @@ enum {CONNECT_STATE, CONNECT_CLOUD, CONNECT_SERVER, SEND_DATA_STATE};
 
 TCPClient client;
 unsigned long lastSend = 0;
+unsigned long lastConn = 0;
 int state = CONNECT_STATE;
 
 void setup() {
@@ -43,8 +46,8 @@ void loop() {
 	    }
 	    state = CONNECT_CLOUD;
 	    break;
-	    
-	case CONNECT_CLOUD:
+
+    case CONNECT_CLOUD:
 	    Serial.println("CONNECT_CLOUD");
     	if (Particle.connected() == false){
     	    // if have access to the internet, try to connect to the cloud
@@ -55,7 +58,7 @@ void loop() {
     	}
     	state = CONNECT_SERVER;
     	break;
-    	
+
 	case CONNECT_SERVER:
 		Serial.println("CONNECT_SERVER");
 		Serial.println("connecting to tcp server...");
@@ -70,7 +73,24 @@ void loop() {
 		break;
 
 	case SEND_DATA_STATE:
-		Serial.println("SEND_DATA_STATE");
+		if (millis() - lastConn >= CONN_PERIOD_MS) {
+	        lastConn = millis();
+	        Serial.println("Checking for wifi and internet connections");
+		    if (Particle.connected() == false){
+	    	    // if have access to the internet, try to connect to the cloud
+	    	    if (WiFi.resolve("particle.io")){
+	    	    	Serial.println("connecting to cloud...");
+	    	        Particle.connect();
+	    	    }
+	    	}
+		    if (!WiFi.ready()) {
+				// Disconnected
+				Serial.println("disconnected...");
+				client.stop();
+				state = CONNECT_STATE;
+				delay(5000);
+			}
+		}	
 		if (client.connected()) {
 			// Discard any incoming data; there shouldn't be any
 			while(client.available()) {

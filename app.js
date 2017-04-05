@@ -26,7 +26,7 @@ var clients = [];
 var db;
 MongoClient.connect(mongoUrl, function(err, database) {
   assert.equal(null, err);
-  console.log("Connected successfully to mongodb");
+  console.log( dateFormat(new Date(), "dd/mm/yyyy HH:MM:ss") + " - Connected successfully to mongodb");
   db = database;
   // update clients once every second
   setInterval(function() {
@@ -35,7 +35,7 @@ MongoClient.connect(mongoUrl, function(err, database) {
       assert.equal(err, null);
       docs.forEach(function(data, index){
         if (data.status != 2 && new Date() - data.lastModified > 30000){
-          console.log("Device id:" + data._id + " not seen in the last 30 seconds. Setting offline.");
+          console.log( dateFormat(new Date(), "dd/mm/yyyy HH:MM:ss") + " - Device " + data.alias + " (id:" + data._id + ") not seen in the last 30 seconds. Setting offline.");
           data.status = 2;
           upsert(data, insertHistoric);
           pushNotification(data);
@@ -119,7 +119,7 @@ app.get('/stream', function(req, res) {
       'Connection': 'keep-alive'
   };
   res.writeHead(200, headers);
-  console.log("starting sse");
+  console.log( dateFormat(new Date(), "dd/mm/yyyy HH:MM:ss") + " - starting sse");
   clients.push(res);
 });
 
@@ -146,34 +146,36 @@ app.post('/remove-notification', function (req, res) {
 });
 
 app.listen(httpPort);
-console.log(httpPort + ' is the magic port');
+console.log( dateFormat(new Date(), "dd/mm/yyyy HH:MM:ss") + ' - ' + httpPort + ' is the magic port');
 
 // Start a TCP Server. This is what receives data from the Particle Photon
 // https://gist.github.com/creationix/707146
 net.createServer(function (socket) {
 
   socket.on('error', function (err) {
-    console.log("Caught tcp server socket error: ")
+    console.log(dateFormat(new Date(), "dd/mm/yyyy HH:MM:ss") + " - Caught tcp server socket error: ")
     console.log(err.stack)
   });
 
 	socket.on('data', function (packet) {
+    console.log(dateFormat(new Date(), "dd/mm/yyyy HH:MM:ss") + ' - tcp://' + rinfo.address + ':' + rinfo.port + ' ' + packet._id + '-' + packet.status);
     dataManage(packet)
 	});
 }).listen(tcpPort);
 
 udp.on('error', function (err) {
-  console.log("Caught udp server socket error: ")
+  console.log(dateFormat(new Date(), "dd/mm/yyyy HH:MM:ss") + " - Caught udp server socket error: ")
   console.log(err.stack)
 });
 
 udp.on('message', function (packet, rinfo) {
+  console.log(dateFormat(new Date(), "dd/mm/yyyy HH:MM:ss") + ' - udp://' + rinfo.address + ':' + rinfo.port + ' ' + packet._id + '-' + packet.status);
   dataManage(packet);
 });
 
 udp.on('listening', function() {
   var address = udp.address();
-  console.log('udp server listening');
+  console.log(dateFormat(new Date(), "dd/mm/yyyy HH:MM:ss") + ' - udp server listening');
 });
 
 udp.bind(udpPort);
@@ -196,7 +198,7 @@ function sendToClients(data) {
 		}
 	});
 	failures.forEach(function (client) {
-		console.log("ending sse");
+		console.log(dateFormat(new Date(), "dd/mm/yyyy HH:MM:ss") + " - ending sse");
 		removeClient(client);
 		client.end();
 	});
@@ -307,7 +309,7 @@ var getNotifications = function(callback){
 var addNotifications = function(data,callback){
   db.collection('notifications').save(data, function(err, result){
     if (err) return console.log(err);
-    console.log('saved to database');
+    console.log(dateFormat(new Date(), "dd/mm/yyyy HH:MM:ss") + ' - saved to database');
     callback();
   })
 }
@@ -316,7 +318,7 @@ var removeNotifications = function (data,callback){
   console.log(data);
   db.collection('notifications').deleteOne({ _id: new mongodb.ObjectID(data._id) }, function(err, result){
     if (err) return console.log(err);
-    console.log('removed from database');
+    console.log(dateFormat(new Date(), "dd/mm/yyyy HH:MM:ss") + ' - removed from database');
     callback(result);
   })
 }

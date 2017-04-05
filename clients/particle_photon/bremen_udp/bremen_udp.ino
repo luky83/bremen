@@ -62,6 +62,7 @@ void loop() {
 	}
 	
 	if (millis() - lastConn >= CONN_PERIOD_MS) {
+        lastConn = millis();
         Serial.println("Checking for wifi and internet connections");
 		if (!WiFi.ready()) {
 	        while(!WiFi.ready()) {
