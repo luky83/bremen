@@ -158,7 +158,7 @@ net.createServer(function (socket) {
   });
 
 	socket.on('data', function (packet) {
-    console.log(dateFormat(new Date(), "dd/mm/yyyy HH:MM:ss") + ' - tcp://' + rinfo.address + ':' + rinfo.port + ' ' + packet.toString());
+    console.log(dateFormat(new Date(), "dd/mm/yyyy HH:MM:ss") + ' - tcp://' + socket.remoteAddress + ':' + rinfo.port + ' ' + packet.toString());
     dataManage(packet)
 	});
 }).listen(tcpPort);
