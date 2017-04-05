@@ -11,7 +11,7 @@ IPAddress serverAddress(192,168,1,151);
 int serverPort = 8081;
 
 // Finite state machine states
-enum {CONNECT_STATE, SEND_DATA_STATE};
+enum {CONNECT_STATE, CONNECT_CLOUD, CONNECT_SERVER, SEND_DATA_STATE};
 
 TCPClient client;
 unsigned long lastSend = 0;
@@ -22,33 +22,55 @@ void setup() {
 	pinMode(INPUT_PIN, INPUT_PULLUP);
 	pinMode(DRAIN_PIN, OUTPUT);
 	digitalWrite(DRAIN_PIN, LOW);
+	Serial.println("setup wifi...");
 	WiFi.on();
     while(!WiFi.ready()) WiFi.connect();
+    // Print your device IP Address via serial
+    Serial.println(WiFi.localIP());
 }
 
 void loop() {
     
-    if (Particle.connected() == false){
-	    // if have access to the internet, try to connect to the cloud
-	    if (WiFi.resolve("particle.io")){
-	        Particle.connect();
-	    }
-	}
-	
 	switch(state) {
 	case CONNECT_STATE:
-		Serial.println("connecting...");
+	    Serial.println("CONNECT_STATE");
+	    if (!WiFi.ready()) {
+	        while(!WiFi.ready()) {
+	        	Serial.println("connecting to wifi...");
+	            WiFi.connect();
+	            delay(1000);
+	        }
+	    }
+	    state = CONNECT_CLOUD;
+	    break;
+	    
+	case CONNECT_CLOUD:
+	    Serial.println("CONNECT_CLOUD");
+    	if (Particle.connected() == false){
+    	    // if have access to the internet, try to connect to the cloud
+    	    if (WiFi.resolve("particle.io")){
+    	    	Serial.println("connecting to cloud...");
+    	        Particle.connect();
+    	    }
+    	}
+    	state = CONNECT_SERVER;
+    	break;
+    	
+	case CONNECT_SERVER:
+		Serial.println("CONNECT_SERVER");
+		Serial.println("connecting to tcp server...");
 		if (client.connect(serverAddress, serverPort)) {
 			state = SEND_DATA_STATE;
 		}
 		else {
 			Serial.println("connection failed");
 			delay(15000);
-			WiFi.connect();
+			state = CONNECT_STATE;
 		}
 		break;
 
 	case SEND_DATA_STATE:
+		Serial.println("SEND_DATA_STATE");
 		if (client.connected()) {
 			// Discard any incoming data; there shouldn't be any
 			while(client.available()) {
@@ -57,6 +79,7 @@ void loop() {
 
 			// Send data up to the server
 			if (millis() - lastSend >= SEND_PERIOD_MS) {
+			    Serial.println("sending to server...");
 				lastSend = millis();
 
 				// analogRead returns 0 - 4095; remove the low bits so we got 0 - 255 instead.

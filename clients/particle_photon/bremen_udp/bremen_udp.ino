@@ -22,19 +22,17 @@ unsigned long lastConn = 0;
 unsigned long lastSend = 0;
 
 void setup() {
+    Serial.begin(9600);
     pinMode(INPUT_PIN, INPUT_PULLUP);
 	pinMode(DRAIN_PIN, OUTPUT);
 	digitalWrite(DRAIN_PIN, LOW);
-	
+	Serial.println("setup wifi...");
 	WiFi.on();
     while(!WiFi.ready()) WiFi.connect();
-    
+    // Print your device IP Address via serial
+    Serial.println(WiFi.localIP());
     // start the UDP
     Udp.begin(localPort);
-    
-    // Print your device IP Address via serial
-    Serial.begin(9600);
-    Serial.println(WiFi.localIP());
 }
 
 void loop() {
@@ -56,6 +54,7 @@ void loop() {
 
 		String data = "{\"_id\":\"" + System.deviceID() + "\",\"status\":" + (unsigned char)val + "}";
 		    // Echo back data to sender
+        Serial.println("sending to udp server...");
         Udp.beginPacket(serverAddress, serverPort);
         Udp.write(data);
         Udp.endPacket();
@@ -63,8 +62,10 @@ void loop() {
 	}
 	
 	if (millis() - lastConn >= CONN_PERIOD_MS) {
+        Serial.println("Checking for wifi and internet connections");
 		if (!WiFi.ready()) {
 	        while(!WiFi.ready()) {
+                Serial.println("connecting to wifi...");
 	            WiFi.connect();
 	            delay (1000);
 	        }
@@ -72,6 +73,7 @@ void loop() {
 	    if (Particle.connected() == false){
     	    // if have access to the internet, try to connect to the cloud
     	    if (WiFi.resolve("particle.io")){
+                Serial.println("connecting to cloud...");
     	        Particle.connect();
     	    }
     	}
