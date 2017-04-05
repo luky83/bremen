@@ -151,7 +151,6 @@ console.log(httpPort + ' is the magic port');
 // Start a TCP Server. This is what receives data from the Particle Photon
 // https://gist.github.com/creationix/707146
 net.createServer(function (socket) {
-	console.log('data connection started from ' + socket.remoteAddress);
 
   socket.on('error', function (err) {
     console.log("Caught tcp server socket error: ")
@@ -353,8 +352,6 @@ var pushNotification = function(packet, callback){
     var rt = db.collection('realtime');
     rt.find({_id : packet._id}).toArray(function(err, device) {
       packet.alias = device[0].alias;
-      console.log('_id: ' + device[0]._id)
-      console.log('alias: ' + device[0].alias)
       notifications.forEach(function(notification){
         pushMail(notification, packet);
         sendSMS(notification, packet);
