@@ -26,3 +26,13 @@ function saveTXT(){
 function saveCSV(){
   window.location = 'storico.csv';
 }
+
+//$.fn.editable.defaults.mode = 'inline';
+$(document).ready(function() {
+    $('.machine-name').editable();
+    $('#username').editable();
+});
+
+$(function () {
+  $('[data-toggle="popover"]').popover()
+})

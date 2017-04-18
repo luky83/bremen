@@ -61,9 +61,3 @@ function handleData(data) {
 	var time = document.getElementById(data._id+"-time");
 	time.innerHTML = data.lastModified;
 }
-
-//$.fn.editable.defaults.mode = 'inline';
-$(document).ready(function() {
-    $('.machine-name').editable();
-		$('#username').editable();
-});

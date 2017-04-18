@@ -153,24 +153,24 @@ console.log( dateFormat(new Date(), "dd/mm/yyyy HH:MM:ss") + ' - ' + httpPort + 
 net.createServer(function (socket) {
 
   socket.on('error', function (err) {
-    console.log(dateFormat(new Date(), "dd/mm/yyyy HH:MM:ss") + " - Caught tcp server socket error: ")
-    console.log(err.stack)
+    console.log(dateFormat(new Date(), "dd/mm/yyyy HH:MM:ss") + " - Caught tcp server socket error: ");
+    console.log(err.stack);
   });
 
 	socket.on('data', function (packet) {
     console.log(dateFormat(new Date(), "dd/mm/yyyy HH:MM:ss") + ' - tcp://' + socket.remoteAddress + ' ' + packet.toString());
-    dataManage(packet)
+    dataManage(packet, socket.remoteAddress);
 	});
 }).listen(tcpPort);
 
 udp.on('error', function (err) {
-  console.log(dateFormat(new Date(), "dd/mm/yyyy HH:MM:ss") + " - Caught udp server socket error: ")
-  console.log(err.stack)
+  console.log(dateFormat(new Date(), "dd/mm/yyyy HH:MM:ss") + " - Caught udp server socket error: ");
+  console.log(err.stack);
 });
 
 udp.on('message', function (packet, rinfo) {
   console.log(dateFormat(new Date(), "dd/mm/yyyy HH:MM:ss") + ' - udp://' + rinfo.address + ':' + rinfo.port + ' ' + packet.toString());
-  dataManage(packet);
+  dataManage(packet, rinfo.address);
 });
 
 udp.on('listening', function() {
@@ -180,9 +180,10 @@ udp.on('listening', function() {
 
 udp.bind(udpPort);
 
-function dataManage(packet){
+function dataManage(packet, clientIp){
   try {
     dataObj = JSON.parse(packet);
+    dataObj.ip = clientIp;
     deviceManage(dataObj);
   } catch (e) {
     console.error(e);
@@ -214,9 +215,9 @@ function removeClient(client) {
 
 // Mongo DAO functions
 var update = function(packet) {
-  var collection = db.collection('realtime');
-  collection.update({ _id : packet._id }
-    , { $set: { lastModified: new Date() }}, function(err, result) {
+  var rt = db.collection('realtime');
+  rt.update({ _id : packet._id }
+    , { $set: { lastModified: new Date(), ip: packet.ip }}, function(err, result) {
     assert.equal(err, null);
     assert.equal(1, result.result.n);
   });
@@ -225,7 +226,7 @@ var update = function(packet) {
 var upsert = function(packet, callback) {
   var rt = db.collection('realtime');
   rt.update({ _id : packet._id }
-    , { $set: { status : packet.status, lastModified: new Date() }},  {upsert: true}, function(err, result) {
+    , { $set: { status : packet.status, lastModified: new Date(), ip: packet.ip }},  {upsert: true}, function(err, result) {
     assert.equal(err, null);
     assert.equal(1, result.result.n);
   });
@@ -234,9 +235,9 @@ var upsert = function(packet, callback) {
 
 var insertHistoric = function(packet) {
   // Get the documents collection
-  var collection = db.collection('history');
+  var ht = db.collection('history');
   // Insert some documents
-  collection.insert({ id : packet._id, status : packet.status, lastModified : new Date() }, function(err, result) {
+  ht.insert({ id : packet._id, status : packet.status, lastModified : new Date() }, function(err, result) {
     assert.equal(err, null);
     assert.equal(1, result.result.n);
     assert.equal(1, result.ops.length);
