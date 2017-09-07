@@ -52,19 +52,16 @@ function handleData(data) {
 
 	statusStr.innerHTML = status;
 
-	var lastModified;
-	var lastUpdated;
-
 	if ( data.lastModified != null) {
-		lastModified = moment(data.lastModified);
+		var lastModified = moment(data.lastModified);
 		var el = document.getElementById(data._id+"-changed");
 		el.innerHTML = lastModified.calendar();
 		$('#'+data._id+"-changed").attr('data-original-title', lastModified.format("ddd D MMM YYYY, H:mm:ss"));
 	}
 	if ( data.lastUpdated != null) {
-		lastUpdated = moment(data.lastUpdated);
+		var lastUpdated = moment(data.lastUpdated);
 		var el = document.getElementById(data._id+"-updated");
 		el.innerHTML = lastUpdated.format("H:mm:ss");
-		$('#'+data._id+"-updated").attr('data-original-title', 'Ultimo aggiornamento<br>' + lastModified.format("ddd D MMM YYYY, H:mm:ss"));
+		$('#'+data._id+"-updated").attr('data-original-title', 'Ultimo aggiornamento<br>' + lastUpdated.format("ddd D MMM YYYY, H:mm:ss"));
 	} 
 }
