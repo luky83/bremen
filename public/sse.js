@@ -22,13 +22,7 @@ document.addEventListener( 'DOMContentLoaded', function () {
 
 
 function handleData(data) {
-	if (window.Intl && typeof window.Intl === "object") {
-		// request a weekday along with a long date
-		var options = { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' };
-		data.lastModified = new Intl.DateTimeFormat('it-IT',options).format(new Date(data.lastModified));
-	} else {
-		data.lastModified = new Date(data.lastModified).toLocaleString();
-	}
+
 	var cssClass;
 	var status;
 	if (data.status === 0) {
@@ -58,6 +52,19 @@ function handleData(data) {
 
 	statusStr.innerHTML = status;
 
-	var time = document.getElementById(data._id+"-time");
-	time.innerHTML = data.lastModified;
+	var lastModified;
+	var lastUpdated;
+
+	if ( data.lastModified != null) {
+		lastModified = moment(data.lastModified);
+		var el = document.getElementById(data._id+"-changed");
+		el.innerHTML = lastModified.calendar();
+		$('#'+data._id+"-changed").attr('data-original-title', lastModified.format("ddd D MMM YYYY, H:mm:ss"));
+	}
+	if ( data.lastUpdated != null) {
+		lastUpdated = moment(data.lastUpdated);
+		var el = document.getElementById(data._id+"-updated");
+		el.innerHTML = lastUpdated.format("H:mm:ss");
+		$('#'+data._id+"-updated").attr('data-original-title', 'Ultimo aggiornamento<br>' + lastModified.format("ddd D MMM YYYY, H:mm:ss"));
+	} 
 }

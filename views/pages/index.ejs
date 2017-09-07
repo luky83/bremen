@@ -20,12 +20,14 @@
 								<h1 class="panel-title editable editable-click editable-empty editable-open machine-name" data-url="/edit-machine-name" data-type="text" data-pk="<%= device._id%>"><%= device.alias ? device.alias : device._id%></h1>
 							</div>
 							<img src="/img/default_dot.png" height="96" width="96" id='<%= device._id + "-img"%>'>
+							<h6></h6>
+							<h6 id='<%= device._id + "-updated"%>' data-toggle="tooltip" data-placement="bottom" data-html="true" title="">&nbsp;</h6>
 						</div>
 						<div class="panel-heading">
 							<h3>
-								<span class="label label-default" id='<%= device._id + "-status"%>' tabindex="0" role="button" data-toggle="popover" data-placement="top" title="<%= device._id%>" data-content="<%= device.ip%>"></span>
+								<span class="label label-default" id='<%= device._id + "-status"%>' tabindex="0" role="button" data-toggle="popover" data-placement="top" title="<%= device._id%>" data-content='<%= device.ip%>' data-html="true" ></span>
 							</h3>
-							<p id='<%= device._id + "-time"%>'></p>
+							<h6 id='<%= device._id + "-changed"%>' data-toggle="tooltip" data-placement="bottom" title=""></h6>
 						</div>
 					</div>
 				</div>

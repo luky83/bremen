@@ -34,7 +34,7 @@ MongoClient.connect(mongoUrl, function(err, database) {
     rt.find({}).toArray(function(err, docs) {
       assert.equal(err, null);
       docs.forEach(function(data, index){
-        if (data.status != 2 && new Date() - data.lastModified > 30000){
+        if (data.status != 2 && new Date() - data.lastUpdated > 30000){
           console.log( dateFormat(new Date(), "dd/mm/yyyy HH:MM:ss") + " - Device " + data.alias + " (id:" + data._id + ") not seen in the last 30 seconds. Setting offline.");
           data.status = 2;
           upsert(data, insertHistoric);
@@ -217,7 +217,7 @@ function removeClient(client) {
 var update = function(packet) {
   var rt = db.collection('realtime');
   rt.update({ _id : packet._id }
-    , { $set: { lastModified: new Date(), ip: packet.ip }}, function(err, result) {
+    , { $set: { lastUpdated: new Date(), ip: packet.ip }}, function(err, result) {
     assert.equal(err, null);
     assert.equal(1, result.result.n);
   });
@@ -226,7 +226,7 @@ var update = function(packet) {
 var upsert = function(packet, callback) {
   var rt = db.collection('realtime');
   rt.update({ _id : packet._id }
-    , { $set: { status : packet.status, lastModified: new Date(), ip: packet.ip }},  {upsert: true}, function(err, result) {
+    , { $set: { status : packet.status, lastUpdated: ( packet.status != 2 ? new Date() : null), lastModified: new Date(), ip: packet.ip }},  {upsert: true}, function(err, result) {
     assert.equal(err, null);
     assert.equal(1, result.result.n);
   });
@@ -237,7 +237,7 @@ var insertHistoric = function(packet) {
   // Get the documents collection
   var ht = db.collection('history');
   // Insert some documents
-  ht.insert({ id : packet._id, status : packet.status, lastModified : new Date() }, function(err, result) {
+  ht.insert({ id : packet._id, status : packet.status, lastUpdated: packet.lastUpdated, lastModified : packet.lastModified }, function(err, result) {
     assert.equal(err, null);
     assert.equal(1, result.result.n);
     assert.equal(1, result.ops.length);
@@ -291,9 +291,10 @@ var getHistory = function(type,callback) {
             break;
           default:
         }
-        var time = dateFormat(new Date(e.lastModified), "dd/mm/yyyy HH:MM:ss");
-        if (type === 'txt') str += name +'\t'+ e.status +'\t'+ time +'\n';
-        if (type === 'csv') str += name +','+ status +','+ time +'\n';
+        var modifiedTime = dateFormat(new Date(e.lastModified), "dd/mm/yyyy HH:MM:ss");
+        var updatedTime = dateFormat(new Date(e.updatedTime), "dd/mm/yyyy HH:MM:ss");
+        if (type === 'txt') str += name +'\t'+ e.status +'\t'+ modifiedTime +'\t'+ updatedTime +'\n';
+        if (type === 'csv') str += name +','+ status +','+ modifiedTime +'\t'+ updatedTime +'\n';
       });
       callback(err,str);
     });
