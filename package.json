@@ -3,9 +3,9 @@
   "description": "monitor the status of multiple devices in a local network",
   "repository": {
     "type": "git",
-    "url": "ssh://lucamarkio.com/home/lucamark/bremen.git"
+    "url": "https://github.com/luky83/bremen.git"
   },
-  "main": "app.js",
+  "main": "bremon-server.js",
   "dependencies": {
     "body-parser": "^1.15.2",
     "dateformat": "^2.0.0",
