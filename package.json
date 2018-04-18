@@ -1,9 +1,9 @@
 {
   "name": "bremen",
-  "description" : "monitor the status of multiple devices in a local network",
-  "repository" :
-  { "type" : "git"
-  , "url" : "ssh://lucamarkio.com/home/lucamark/bremen.git"
+  "description": "monitor the status of multiple devices in a local network",
+  "repository": {
+    "type": "git",
+    "url": "ssh://lucamarkio.com/home/lucamark/bremen.git"
   },
   "main": "app.js",
   "dependencies": {
